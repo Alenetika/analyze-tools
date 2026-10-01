@@ -1,0 +1,58 @@
+{
+    "defaultExcludes":  [
+                            "**.idea/*",
+                            "**.vs/*",
+                            "**.vscode/*",
+                            "**.git/*",
+                            "**bin/*",
+                            "**obj/*",
+                            "**node_modules/*",
+                            "**.ttf",
+                            "**gitingest.txt",
+                            "**.gitingestignore",
+                            "**unilyze.html",
+                            "**unilyze.json",
+                            "**.testsession"
+                        ],
+    "profiles":  {
+                     "unity":  {
+                                   "excludes":  [
+                                                    "*Library/*",
+                                                    "*Temp/*",
+                                                    "*Logs/*",
+                                                    "*Build/*",
+                                                    "Assets/TextMesh Pro",
+                                                    "*packages-lock.json",
+                                                    "*ProjectSettings/*",
+                                                    "**.unity",
+                                                    "**.meta",
+                                                    "**.mat",
+                                                    "**.cginc",
+                                                    "**.shader",
+                                                    "*.asset",
+                                                    "UserSettings/*"
+                                                ]
+                               },
+                     "dotnet":  {
+                                    "excludes":  [
+                                                     "bin/*",
+                                                     "obj/*",
+                                                     "packages/*"
+                                                 ]
+                                },
+                     "web":  {
+                                 "excludes":  [
+                                                  "node_modules/*",
+                                                  "dist/*",
+                                                  "build/*",
+                                                  ".next/*",
+                                                  "out/*"
+                                              ]
+                             }
+                 },
+    "paths":  {
+                  "tempDir":  "C:\\Projects\\PowerShell\\Temp",
+                  "gitingest":  "/home/alenetika/miniforge3/bin/gitingest",
+                  "unilyze":  ""
+              }
+}
