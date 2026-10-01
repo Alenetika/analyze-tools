@@ -9,7 +9,7 @@
 | Шаг | Инструмент | Результат |
 |-----|-----------|-----------|
 | 1 | [gitingest](https://github.com/cyclotruc/gitingest) | `gitingest.txt` — плоское дерево проекта с содержимым файлов, готовое для LLM |
-| 2 | [unilyze](https://github.com/) | `unilyze.html` — анализ C#-скриптов (работает для любого проекта с .cs, не только Unity) |
+| 2 | [unilyze](https://github.com/bigdra50/unilyze) | `unilyze.html` — анализ C#-скриптов (работает для любого проекта с .cs, не только Unity) |
 | 3 | Встроенный TestRunner | XML/TRX-отчёты тестов (Unity Test Framework, `dotnet test`, NUnit) |
 
 ## Требования
@@ -22,6 +22,6 @@
 ## Установка
 
 ```powershell
-git clone <repo> C:\Projects\PowerShell
+git clone [<repo>](https://github.com/Alenetika/analyze-tools.git) C:\Projects\PowerShell
 cd C:\Projects\PowerShell
 .\setup.ps1
