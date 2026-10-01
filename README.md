@@ -16,7 +16,7 @@
 
 - **Windows** с PowerShell 5.1+ (или PowerShell 7+)
 - **WSL 2** с установленным `gitingest` внутри (`pip install --user gitingest`)
-- Опционально: **unilyze** — либо в WSL, либо в Windows PATH
+- Опционально: **unilyze** — в Windows PATH
 - Опционально: **Unity Editor** (для Unity-проектов), **dotnet SDK** (для dotnet-проектов), **NUnit.ConsoleRunner** (автоустанавливается)
 
 ## Установка
