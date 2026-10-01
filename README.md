@@ -25,3 +25,4 @@
 git clone [<repo>](https://github.com/Alenetika/analyze-tools.git) C:\Projects\PowerShell
 cd C:\Projects\PowerShell
 .\setup.ps1
+```
