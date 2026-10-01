@@ -26,3 +26,13 @@ git clone [<repo>](https://github.com/Alenetika/analyze-tools.git) C:\Projects\P
 cd C:\Projects\PowerShell
 .\setup.ps1
 ```
+```powershell
+$projectDir = "C:\Projects\PowerShell"
+$current = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($current -notlike "*$projectDir*") {
+    [Environment]::SetEnvironmentVariable("Path", "$current;$projectDir", "User")
+    Write-Host "Added to user PATH: $projectDir"
+} else {
+    Write-Host "Already in PATH"
+}
+```
