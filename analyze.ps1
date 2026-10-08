@@ -5,6 +5,7 @@ param(
     [string]$OutDir = ".",
     [string]$Token = $env:GITHUB_TOKEN,   # зарезервировано под будущее использование
     [string]$Profile = "auto",
+    [switch]$FromRoot,
     [switch]$IncludeIgnored,
     [switch]$SkipSetup
 )
@@ -99,6 +100,7 @@ Write-Host "Analysis started" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Path: $fullPath"
 Write-Host "Profile: $Profile"
+Write-Host "Scope: $(if ($FromRoot) { 'весь проект (от корня проекта)' } else { 'только указанная папка' })"
 Write-Host "Output: $outDirPath"
 Write-Host "Excludes: $($excludes.Count) pattern(s)"
 Write-Host ""
@@ -112,7 +114,7 @@ Write-Host ""
 # Unilyze работает с любым проектом, где есть C#-скрипты, а не только с Unity.
 # Профиль анализа ('unity') включает role-aware пороги unilyze.
 Write-Host ">> Step 2/3: Running Unilyze" -ForegroundColor Yellow
-$unilyzeSuccess = Invoke-Unilyze -Path $fullPath -OutputDir $outDirPath -Config $config -ProjectProfile $Profile
+$unilyzeSuccess = Invoke-Unilyze -Path $fullPath -OutputDir $outDirPath -Config $config -ProjectProfile $Profile -FromRoot:$FromRoot
 Write-Host ""
 
 # --- Шаг 3: Tests ---
