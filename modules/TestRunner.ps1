@@ -1,4 +1,4 @@
-# modules/TestRunner.ps1
+﻿# modules/TestRunner.ps1
 
 function Get-ProjectType {
     param([string]$Path)
