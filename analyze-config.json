@@ -12,6 +12,9 @@
                             "**.gitingestignore",
                             "**unilyze.html",
                             "**unilyze.json",
+                            "**unilyze-flags.json",
+                            "**unilyze-flags.md",
+                            "**.unilyze/*",
                             "**.testsession"
                         ],
     "profiles":  {
@@ -50,9 +53,38 @@
                                               ]
                              }
                  },
+    "unilyze":  {
+                    "profile":  "",
+                    "emitHtml":  true,
+                    "filter":  {
+                                   "enabled":  true,
+                                   "mode":  "smell",
+                                   "minSeverity":  "Warning",
+                                   "sources":  [
+                                                   "smell",
+                                                   "metric",
+                                                   "health"
+                                               ],
+                                   "ignoreKinds":  [
+
+                                                   ],
+                                   "maxTypes":  0,
+                                   "maxMethodsPerType":  0,
+                                   "includeRawSmells":  true,
+                                   "includeSuppressed":  false,
+                                   "includeBaselined":  false,
+                                   "includeTriage":  false,
+                                   "compact":  true,
+                                   "outputJson":  "unilyze-flags.json",
+                                   "outputMarkdown":  "unilyze-flags.md",
+                                   "thresholds":  {
+
+                                                  }
+                               }
+                },
     "paths":  {
-                  "tempDir":  "C:\\Projects\\PowerShell\\Temp",
-                  "gitingest":  "/home/alenetika/miniforge3/bin/gitingest",
-                  "unilyze":  ""
+                  "tempDir":  "D:\\Projects\\PowerShell\\Temp",
+                  "gitingest":  "/home/apida/.local/bin/gitingest",
+                  "unilyze":  "C:\\Users\\apida\\.dotnet\\tools\\unilyze.exe"
               }
 }

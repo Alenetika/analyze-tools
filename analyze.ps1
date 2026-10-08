@@ -1,4 +1,4 @@
-# analyze.ps1
+﻿# analyze.ps1
 
 param(
     [string]$Path = ".",
@@ -35,7 +35,7 @@ if (-not (Test-Path $modulePath)) {
 }
 
 # --- Dot-source модулей: функции становятся доступны в текущей сессии ---
-$moduleFiles = @("Gitingest.ps1", "Unilyze.ps1", "TestRunner.ps1")
+$moduleFiles = @("UnilyzeFilter.ps1", "Gitingest.ps1", "Unilyze.ps1", "TestRunner.ps1")
 foreach ($mf in $moduleFiles) {
     $full = Join-Path $modulePath $mf
     if (-not (Test-Path $full)) {
@@ -110,8 +110,9 @@ Write-Host ""
 
 # --- Шаг 2: Unilyze ---
 # Unilyze работает с любым проектом, где есть C#-скрипты, а не только с Unity.
+# Профиль анализа ('unity') включает role-aware пороги unilyze.
 Write-Host ">> Step 2/3: Running Unilyze" -ForegroundColor Yellow
-$unilyzeSuccess = Invoke-Unilyze -Path $fullPath -OutputDir $outDirPath -Config $config
+$unilyzeSuccess = Invoke-Unilyze -Path $fullPath -OutputDir $outDirPath -Config $config -ProjectProfile $Profile
 Write-Host ""
 
 # --- Шаг 3: Tests ---
@@ -135,6 +136,9 @@ Write-Host ""
 Write-Host "Output directory: $outDirPath"
 Write-Host "  - gitingest.txt"
 Write-Host "  - unilyze.html"
+Write-Host "  - unilyze.json        (full snapshot)"
+Write-Host "  - unilyze-flags.json  (only worse than norm)"
+Write-Host "  - unilyze-flags.md    (same, human readable)"
 if ($Profile -eq "unity") {
     Write-Host "  - unity-results.xml (или *-nunit.xml при fallback)"
     Write-Host "  - unity-log.txt"

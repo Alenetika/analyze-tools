@@ -1,4 +1,4 @@
-# modules/Gitingest.ps1
+﻿# modules/Gitingest.ps1
 function ConvertTo-WslPath {
     param([string]$Path)
     if ([string]::IsNullOrEmpty($Path)) { return "" }

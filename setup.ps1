@@ -77,11 +77,40 @@ $pathsSection = [ordered]@{
     unilyze   = if ($unilyzePath) { $unilyzePath } else { "" }
 }
 
+# Настройки шага unilyze и фильтра "только хуже нормы" (modules\UnilyzeFilter.ps1).
+# filter.mode = smell  -> доверяем вердиктам unilyze (он уже учитывает .unilyze.json,
+#                         baseline, triage и inline-директивы unilyze-disable).
+#               both   -> плюс независимый пересчёт сырых метрик по порогам
+#                         (полезно, когда хочется порог строже, чем разрешает проект).
+#               metric -> только пересчёт.
+$unilyzeSection = [ordered]@{
+    profile  = ""       # "" = auto (unity при unity-профиле анализа), либо "unity"/"default"
+    emitHtml = $true    # $false = писать только JSON (быстрее)
+    filter   = [ordered]@{
+        enabled           = $true
+        mode              = "smell"
+        minSeverity       = "Warning"      # Warning | Critical
+        sources           = @("smell", "metric", "health")
+        ignoreKinds       = @()            # напр. @("LowMaintainability") - самый шумный вид
+        maxTypes          = 0              # 0 = без ограничения
+        maxMethodsPerType = 0              # 0 = без ограничения
+        includeRawSmells  = $true
+        includeSuppressed = $false
+        includeBaselined  = $false
+        includeTriage     = $false
+        compact           = $true
+        outputJson        = "unilyze-flags.json"
+        outputMarkdown    = "unilyze-flags.md"
+        thresholds        = [ordered]@{}   # переопределение порогов, напр. GodClass = @{ lines = 600 }
+    }
+}
+
 $defaultConfig = [ordered]@{
     defaultExcludes = @(
         "**.idea/*","**.vs/*","**.vscode/*","**.git/*","**bin/*","**obj/*",
         "**node_modules/*","**.ttf","**gitingest.txt","**.gitingestignore",
-        "**unilyze.html","**unilyze.json","**.testsession"
+        "**unilyze.html","**unilyze.json","**unilyze-flags.json","**unilyze-flags.md",
+        "**.unilyze/*","**.testsession"
     )
     profiles = [ordered]@{
         unity  = @{ excludes = @(
@@ -92,6 +121,7 @@ $defaultConfig = [ordered]@{
         dotnet = @{ excludes = @("bin/*","obj/*","packages/*") }
         web    = @{ excludes = @("node_modules/*","dist/*","build/*",".next/*","out/*") }
     }
+    unilyze = $unilyzeSection
     paths = $pathsSection
 }
 
@@ -100,6 +130,11 @@ if ((Test-Path $configPath) -and -not $Force) {
         $existing = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
         # Прямое присваивание надёжнее Add-Member -Force
         $existing.paths = [pscustomobject]$pathsSection
+        # Новый раздел добавляем только если его нет: чужие настройки не затираем.
+        if (-not $existing.PSObject.Properties['unilyze']) {
+            $existing | Add-Member -NotePropertyName unilyze -NotePropertyValue ([pscustomobject]$unilyzeSection)
+            Write-Ok "Added 'unilyze' section to existing config"
+        }
         $json = $existing | ConvertTo-Json -Depth 20
         # Без BOM — сторонние JSON-парсеры спотыкаются о BOM
         [System.IO.File]::WriteAllText($configPath, $json, [System.Text.UTF8Encoding]::new($false))
