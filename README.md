@@ -1,4 +1,3 @@
-
 # PowerShell Analysis Toolkit
 
 Набор скриптов для анализа C#/Unity/dotnet-проектов. Собирает дерево проекта в один текстовый файл для LLM,
@@ -8,69 +7,40 @@
 
 Пайплайн из трёх шагов:
 
-| Шаг | Инструмент | Вывод |
-|-----|-----------|-----------|
-| 1 | [gitingest](https://github.com/cyclotruc/gitingest) | `gitingest.txt` — плоское дерево проекта с содержимым файлов, готовое для LLM |
-| 2 | [unilyze](https://github.com/bigdra50/unilyze) | `unilyze.html` — интерактивный анализ; `unilyze.json` — полный снимок |
-| 2b | `modules\UnilyzeFilter.ps1` | `unilyze-flags.json` / `unilyze-flags.md` — **только то, что хуже нормы** |
-| 3 | Встроенный TestRunner | XML/TRX-отчёты (Unity Test Framework, `dotnet test`, NUnit) |
+| Шаг | Инструмент                                          | Вывод                                                                         |
+|-----|-----------------------------------------------------|-------------------------------------------------------------------------------|
+| 1   | [gitingest](https://github.com/cyclotruc/gitingest) | `gitingest.txt` — плоское дерево проекта с содержимым файлов, готовое для LLM |
+| 2   | [unilyze](https://github.com/bigdra50/unilyze)      | `unilyze.html` — интерактивный анализ; `unilyze.json` — полный снимок         |
+| 2b  | `modules\UnilyzeFilter.ps1`                         | `unilyze-flags.json` / `unilyze-flags.md` — **только то, что хуже нормы**     |
+| 3   | Встроенный TestRunner                               | XML/TRX-отчёты (Unity Test Framework, `dotnet test`, NUnit)                   |
 
 ## Требования
 
 ### Общее
 
-- **Windows** с PowerShell 5.1+ (или PowerShell 7+)
-- **WSL 2** — обязательно, используется для запуска `gitingest`
+- **Windows** с PowerShell 5.1+
+- **WSL 2** — `gitingest` лучше работает через WSL
 - **dotnet SDK** (для установки и работы `Unilyze`)
 - Опционально: **Unity Editor** (для Unity-проектов), **NUnit.ConsoleRunner**
   (ставится автоматически при первом запуске тестов)
 
 ---
 
-### 1. Настройка WSL 2
-
-`gitingest` работает через WSL, поэтому WSL должен быть установлен и настроен **до** первого запуска
-`analyze.ps1`.
-
-Установка WSL (в PowerShell **от имени администратора**):
-
-```powershell
-wsl --install
-```
-
-После перезагрузки проверяем, что WSL 2 активен и дистрибутив (например Ubuntu) запускается:
-
-```powershell
-wsl --status
-wsl --list --verbose
-wsl -d Ubuntu -- uname -a
-```
-
-Если WSL уже был установлен ранее, но версия 1 — переводим на 2:
-
-```powershell
-wsl --set-default-version 2
-wsl --set-version Ubuntu 2
-```
-
----
-
 ### 2. Установка `gitingest` внутри WSL
 
-Все команды ниже выполняются **внутри WSL** (запустить `wsl` из PowerShell и работать в bash-сессии
-дистрибутива).
+Все команды ниже выполняются **внутри WSL**
 
-Рекомендуемый способ — через `pipx` (изолированное окружение, не ломает системный Python):
+Рекомендуемый способ — через `pipx`
 
 ```bash
 # 1. Ставим pipx из репозитория
 sudo apt update
 sudo apt install -y pipx
 
-# 2. Прописываем PATH для pipx-приложений (один раз)
+# 2. Прописываем PATH для pipx-приложений  
 pipx ensurepath
 
-# 3. Перезапускаем shell (или: source ~/.bashrc), затем ставим gitingest
+# 3. Перезапускаем shell
 pipx install gitingest
 ```
 
@@ -80,20 +50,6 @@ pipx install gitingest
 # внутри WSL
 gitingest --version
 ```
-
-```powershell
-# из PowerShell (Windows)
-wsl -d Ubuntu -- bash -lc "gitingest --version"
-```
-
-> Если `gitingest` не находится — почти всегда причина в том, что `pipx ensurepath` не был выполнен
-> или shell не перезапущен после него. Проверить: `echo $PATH` внутри WSL должен содержать
-> `~/.local/bin`.
-
-Альтернатива (если `pipx` недоступен): `pip install --user gitingest` — но тогда следите, чтобы
-`~/.local/bin` тоже был в `PATH`.
-
----
 
 ### 3. Установка `Unilyze` на локальной машине
 
@@ -109,41 +65,15 @@ dotnet tool install --global Unilyze
 unilyze --version
 ```
 
-Если `unilyze` не находится после установки — добавьте каталог глобальных .NET-инструментов в `PATH`
-(обычно `%USERPROFILE%\.dotnet\tools`):
-
-```powershell
-$tools = "$env:USERPROFILE\.dotnet\tools"
-$current = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($current -notlike "*$tools*") {
-    [Environment]::SetEnvironmentVariable("Path", "$current;$tools", "User")
-    Write-Host "Added to user PATH: $tools"
-}
-```
-
-Обновление до последней версии:
-
-```powershell
-dotnet tool update --global Unilyze
-```
-
-Если по какой-то причине `Unilyze` не хочется ставить глобально — путь к исполняемому файлу можно
-указать в `analyze-config.json` -> `paths.unilyze`.
-
 ---
 
 ### Сводная таблица «где что ставится»
 
-| Компонент | Где | Команда |
-|---|---|---|
-| WSL 2 | Windows (admin PowerShell) | `wsl --install` |
-| `pipx` | внутри WSL | `sudo apt install pipx` |
-| PATH для `pipx` | внутри WSL | `pipx ensurepath` |
-| `gitingest` | внутри WSL | `pipx install gitingest` |
-| `Unilyze` | Windows (PowerShell) | `dotnet tool install --global Unilyze` |
-| `dotnet SDK` | Windows | [скачать](https://dotnet.microsoft.com/download) |
-| Unity Editor | Windows (опц.) | Unity Hub |
-| NUnit.ConsoleRunner | Windows (опц.) | ставится `analyze.ps1` автоматически |
+| Компонент           | Где                        | Команда                                          |
+|---------------------|----------------------------|--------------------------------------------------|
+| `gitingest`         | внутри WSL                 | `pipx install gitingest`                         |
+| `Unilyze`           | Windows (PowerShell)       | `dotnet tool install --global Unilyze`           |
+| `dotnet SDK`        | Windows                    | [скачать](https://dotnet.microsoft.com/download) |
 
 ## Установка
 
@@ -174,11 +104,11 @@ if ($current -notlike "*$projectDir*") {
 
 unilyze складывает настройки из трёх источников (аддитивно), младший приоритет — выше:
 
-| Область | Путь | Что задаёт |
-|---|---|---|
-| Глобальная | `~/.config/unilyze/config.json` | настройки для всех проектов |
-| Проектная | `<корень проекта>/.unilyze.json` | то, что нужно этому проекту |
-| CLI | `--exclude-dir`, `--profile`, `--baseline`, ... | разовый запуск |
+| Область    | Путь                                            | Что задаёт                  |
+|------------|-------------------------------------------------|-----------------------------|
+| Глобальная | `~/.config/unilyze/config.json`                 | настройки для всех проектов |
+| Проектная  | `<корень проекта>/.unilyze.json`                | то, что нужно этому проекту |
+| CLI        | `--exclude-dir`, `--profile`, `--baseline`, ... | разовый запуск              |
 
 Пример `.unilyze.json`:
 
@@ -211,15 +141,15 @@ unilyze config list  # текущая действующая конфигура�
 
 ### Что реально снижает шум
 
-| Приём | Область | Когда применять |
-|---|---|---|
-| `"rules": { "UNI008": "off" }` | правило целиком | вид находок шумит по всему проекту (например `UNI008` LowMaintainability) |
-| `"smells": { ... }` | порог вида | инструмент формально прав, но для этого проекта порог надо сдвинуть |
-| `--profile unity` | запуск | Unity-проект: role-aware пороги (`MonoBehaviour` 800/30, `ScriptableObject` 650/25) и `LowCohesion` -> informational |
-| `// unilyze-disable-next-line UNI002` / `// unilyze-disable UNI002` | одна находка / объявление | осознанное исключение с обоснованием |
-| `--baseline` (`unilyze baseline create`) | снимок проекта | brownfield: заморозить существующий долг и следить только за новым |
-| `unilyze triage` | одна находка | вердикт `false-positive` / `wontfix`, чтобы не всплывало снова |
-| `excludeDirs` / `--exclude-dir` | каталоги | чужой код (плагины, SDK), который не ваш |
+| Приём                                                               | Область                   | Когда применять                                                                                                      |
+|---------------------------------------------------------------------|---------------------------|----------------------------------------------------------------------------------------------------------------------|
+| `"rules": { "UNI008": "off" }`                                      | правило целиком           | вид находок шумит по всему проекту (например `UNI008` LowMaintainability)                                            |
+| `"smells": { ... }`                                                 | порог вида                | инструмент формально прав, но для этого проекта порог надо сдвинуть                                                  |
+| `--profile unity`                                                   | запуск                    | Unity-проект: role-aware пороги (`MonoBehaviour` 800/30, `ScriptableObject` 650/25) и `LowCohesion` -> informational |
+| `// unilyze-disable-next-line UNI002` / `// unilyze-disable UNI002` | одна находка / объявление | осознанное исключение с обоснованием                                                                                 |
+| `--baseline` (`unilyze baseline create`)                            | снимок проекта            | brownfield: заморозить существующий долг и следить только за новым                                                   |
+| `unilyze triage`                                                    | одна находка              | вердикт `false-positive` / `wontfix`, чтобы не всплывало снова                                                       |
+| `excludeDirs` / `--exclude-dir`                                     | каталоги                  | чужой код (плагины, SDK), который не ваш                                                                             |
 
 Подавленные находки не исчезают из JSON: у них появляется `"suppressed": true` или `"baselined": true`,
 растёт корневой `suppressedCount`, а из бейджей/гейтов они исключаются.
@@ -242,11 +172,11 @@ unilyze config list  # текущая действующая конфигура�
 и передаёт unilyze `--exclude-dir` для всех «соседей» на пути от корня проекта до этой папки
 (в консоли это строка `scope: только <папка> (... исключено каталогов: N)`).
 
-| Запуск | Что анализируется |
-|---|---|
-| `analyze` | только текущая папка (если она внутри проекта) |
-| `analyze -FromRoot` | весь проект от корня `.csproj` — прежнее поведение |
-| `analyze` вне проекта (Unity, папка без `.csproj`) | папка запуска, сужать нечего |
+| Запуск                                             | Что анализируется                                  |
+|----------------------------------------------------|----------------------------------------------------|
+| `analyze`                                          | только текущая папка (если она внутри проекта)     |
+| `analyze -FromRoot`                                | весь проект от корня `.csproj` — прежнее поведение |
+| `analyze` вне проекта (Unity, папка без `.csproj`) | папка запуска, сужать нечего                       |
 
 Что меняется в суженном прогоне:
 
@@ -300,22 +230,22 @@ false-positive. Для LLM и для чтения глазами это шум: 
 
 Три независимых источника (управляются `filter.mode` и `filter.sources`):
 
-| Источник | Что берёт | Комментарий |
-|---|---|---|
-| `smell` | вердикты самого unilyze (`typeMetrics[].codeSmells[]`) | уважает `.unilyze.json`, baseline, triage, inline-директивы |
-| `metric` | независимый пересчёт сырых метрик по порогам | для случая «мой порог строже, чем разрешает проект» |
-| `health` | `codeHealthCategory`: `warning` (< 9.0) и `alert` (< 4.0) | композитная оценка unilyze |
+| Источник | Что берёт                                                 | Комментарий                                                 |
+|----------|-----------------------------------------------------------|-------------------------------------------------------------|
+| `smell`  | вердикты самого unilyze (`typeMetrics[].codeSmells[]`)    | уважает `.unilyze.json`, baseline, triage, inline-директивы |
+| `metric` | независимый пересчёт сырых метрик по порогам              | для случая «мой порог строже, чем разрешает проект»         |
+| `health` | `codeHealthCategory`: `warning` (< 9.0) и `alert` (< 4.0) | композитная оценка unilyze                                  |
 
 Отсеивается всегда: `suppressed`, `baselined`, `triage` = `false-positive`/`wontfix`, находки ниже
 `minSeverity`, виды из `ignoreKinds`, и всё, что не проходит по источникам.
 
 ## Режимы (`mode`)
 
-| Режим | Поведение |
-|---|---|
-| `smell` (по умолчанию) | Доверяем инструменту. Риск противоречия настройкам проекта нулевой. |
-| `both` | `smell` + `metric`. Пересчёт **не дублирует** то, что инструмент уже сказал (включая подавленное), не переоткрывает виды, отключённые через `rules: UNIxxx = off`, и не трогает profile-зависимые виды в unity (`GodClass`, `LowCohesion`). |
-| `metric` | Только пересчёт по порогам. |
+| Режим                  | Поведение                                                                                                                                                                                                                                   |
+|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `smell` (по умолчанию) | Доверяем инструменту. Риск противоречия настройкам проекта нулевой.                                                                                                                                                                         |
+| `both`                 | `smell` + `metric`. Пересчёт **не дублирует** то, что инструмент уже сказал (включая подавленное), не переоткрывает виды, отключённые через `rules: UNIxxx = off`, и не трогает profile-зависимые виды в unity (`GodClass`, `LowCohesion`). |
+| `metric`               | Только пересчёт по порогам.                                                                                                                                                                                                                 |
 
 Важно: `metric` использует пороги из `<проект>/.unilyze.json` -> `smells`, а пороги, **явно** заданные в
 `analyze-config.json` -> `unilyze.filter.thresholds`, сильнее проектного `off` — так можно проверить
@@ -323,21 +253,21 @@ false-positive. Для LLM и для чтения глазами это шум: 
 
 ## Опции фильтра
 
-| Ключ | По умолчанию | Что делает |
-|---|---|---|
-| `enabled` | `true` | Выключает шаг 2b целиком |
-| `mode` | `smell` | `smell` / `both` / `metric` |
-| `minSeverity` | `Warning` | `Critical` — оставить только критичное |
-| `sources` | `smell, metric, health` | какие источники причин вообще показывать |
-| `ignoreKinds` | `[]` | выбросить виды находок, напр. `["LowMaintainability"]` |
-| `maxTypes` | `0` | ограничить число типов в дайджесте (худшие идут первыми) |
-| `maxMethodsPerType` | `0` | ограничить методы на тип (худшие идут первыми) |
-| `includeRawSmells` | `true` | класть исходные объекты находок (с `id` для baseline/triage) |
-| `includeSuppressed` | `false` | показать и подавленные inline |
-| `includeBaselined` | `false` | показать и замороженные baseline |
-| `includeTriage` | `false` | показать и `false-positive`/`wontfix` |
-| `compact` | `true` | минифицировать JSON (PowerShell 5.1 иначе сыпет отступами) |
-| `thresholds` | `{}` | переопределение порогов, напр. `{"GodClass": {"lines": 600}}` |
+| Ключ                | По умолчанию            | Что делает                                                    |
+|---------------------|-------------------------|---------------------------------------------------------------|
+| `enabled`           | `true`                  | Выключает шаг 2b целиком                                      |
+| `mode`              | `smell`                 | `smell` / `both` / `metric`                                   |
+| `minSeverity`       | `Warning`               | `Critical` — оставить только критичное                        |
+| `sources`           | `smell, metric, health` | какие источники причин вообще показывать                      |
+| `ignoreKinds`       | `[]`                    | выбросить виды находок, напр. `["LowMaintainability"]`        |
+| `maxTypes`          | `0`                     | ограничить число типов в дайджесте (худшие идут первыми)      |
+| `maxMethodsPerType` | `0`                     | ограничить методы на тип (худшие идут первыми)                |
+| `includeRawSmells`  | `true`                  | класть исходные объекты находок (с `id` для baseline/triage)  |
+| `includeSuppressed` | `false`                 | показать и подавленные inline                                 |
+| `includeBaselined`  | `false`                 | показать и замороженные baseline                              |
+| `includeTriage`     | `false`                 | показать и `false-positive`/`wontfix`                         |
+| `compact`           | `true`                  | минифицировать JSON (PowerShell 5.1 иначе сыпет отступами)    |
+| `thresholds`        | `{}`                    | переопределение порогов, напр. `{"GodClass": {"lines": 600}}` |
 
 ## Что внутри дайджеста
 
