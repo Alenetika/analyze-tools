@@ -1,3 +1,4 @@
+
 # PowerShell Analysis Toolkit
 
 Набор скриптов для анализа C#/Unity/dotnet-проектов. Собирает дерево проекта в один текстовый файл для LLM,
@@ -16,10 +17,133 @@
 
 ## Требования
 
-- **Windows** с PowerShell 5.1+
-- **WSL 2** с установленным `gitingest` (`pip install --user gitingest`)
-- Опционально: **unilyze** в PATH (или путь в `analyze-config.json` -> `paths.unilyze`)
-- Опционально: **Unity Editor** (для Unity-проектов), **dotnet SDK**, **NUnit.ConsoleRunner** (ставится автоматически)
+### Общее
+
+- **Windows** с PowerShell 5.1+ (или PowerShell 7+)
+- **WSL 2** — обязательно, используется для запуска `gitingest`
+- **dotnet SDK** (для установки и работы `Unilyze`)
+- Опционально: **Unity Editor** (для Unity-проектов), **NUnit.ConsoleRunner**
+  (ставится автоматически при первом запуске тестов)
+
+---
+
+### 1. Настройка WSL 2
+
+`gitingest` работает через WSL, поэтому WSL должен быть установлен и настроен **до** первого запуска
+`analyze.ps1`.
+
+Установка WSL (в PowerShell **от имени администратора**):
+
+```powershell
+wsl --install
+```
+
+После перезагрузки проверяем, что WSL 2 активен и дистрибутив (например Ubuntu) запускается:
+
+```powershell
+wsl --status
+wsl --list --verbose
+wsl -d Ubuntu -- uname -a
+```
+
+Если WSL уже был установлен ранее, но версия 1 — переводим на 2:
+
+```powershell
+wsl --set-default-version 2
+wsl --set-version Ubuntu 2
+```
+
+---
+
+### 2. Установка `gitingest` внутри WSL
+
+Все команды ниже выполняются **внутри WSL** (запустить `wsl` из PowerShell и работать в bash-сессии
+дистрибутива).
+
+Рекомендуемый способ — через `pipx` (изолированное окружение, не ломает системный Python):
+
+```bash
+# 1. Ставим pipx из репозитория
+sudo apt update
+sudo apt install -y pipx
+
+# 2. Прописываем PATH для pipx-приложений (один раз)
+pipx ensurepath
+
+# 3. Перезапускаем shell (или: source ~/.bashrc), затем ставим gitingest
+pipx install gitingest
+```
+
+Проверка, что `gitingest` доступен из WSL и вызывается из PowerShell:
+
+```bash
+# внутри WSL
+gitingest --version
+```
+
+```powershell
+# из PowerShell (Windows)
+wsl -d Ubuntu -- bash -lc "gitingest --version"
+```
+
+> Если `gitingest` не находится — почти всегда причина в том, что `pipx ensurepath` не был выполнен
+> или shell не перезапущен после него. Проверить: `echo $PATH` внутри WSL должен содержать
+> `~/.local/bin`.
+
+Альтернатива (если `pipx` недоступен): `pip install --user gitingest` — но тогда следите, чтобы
+`~/.local/bin` тоже был в `PATH`.
+
+---
+
+### 3. Установка `Unilyze` на локальной машине
+
+`Unilyze` — .NET-инструмент, ставится глобально через `dotnet tool` **на Windows** (не в WSL):
+
+```powershell
+dotnet tool install --global Unilyze
+```
+
+Проверка:
+
+```powershell
+unilyze --version
+```
+
+Если `unilyze` не находится после установки — добавьте каталог глобальных .NET-инструментов в `PATH`
+(обычно `%USERPROFILE%\.dotnet\tools`):
+
+```powershell
+$tools = "$env:USERPROFILE\.dotnet\tools"
+$current = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($current -notlike "*$tools*") {
+    [Environment]::SetEnvironmentVariable("Path", "$current;$tools", "User")
+    Write-Host "Added to user PATH: $tools"
+}
+```
+
+Обновление до последней версии:
+
+```powershell
+dotnet tool update --global Unilyze
+```
+
+Если по какой-то причине `Unilyze` не хочется ставить глобально — путь к исполняемому файлу можно
+указать в `analyze-config.json` -> `paths.unilyze`.
+
+---
+
+### Сводная таблица «где что ставится»
+
+| Компонент | Где | Команда |
+|---|---|---|
+| WSL 2 | Windows (admin PowerShell) | `wsl --install` |
+| `pipx` | внутри WSL | `sudo apt install pipx` |
+| PATH для `pipx` | внутри WSL | `pipx ensurepath` |
+| `gitingest` | внутри WSL | `pipx install gitingest` |
+| `Unilyze` | Windows (PowerShell) | `dotnet tool install --global Unilyze` |
+| `dotnet SDK` | Windows | [скачать](https://dotnet.microsoft.com/download) |
+| Unity Editor | Windows (опц.) | Unity Hub |
+| NUnit.ConsoleRunner | Windows (опц.) | ставится `analyze.ps1` автоматически |
 
 ## Установка
 
